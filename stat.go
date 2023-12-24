@@ -15,6 +15,7 @@ package xstat
 
 import (
 	"fmt"
+	"os"
 	"syscall"
 	"time"
 )
@@ -47,6 +48,19 @@ func NewFromPath(p string, xattr bool) (*Xstat, error) {
 	return &x, nil
 }
 
+func New(p string, fi os.FileInfo, x Xattr) (*Xstat, error) {
+	st, ok := fi.Sys().(*syscall.Stat_t)
+	if !ok {
+		return nil, fmt.Errorf("%s: can't get stat_t", p)
+	}
+
+	xt := &Xstat{
+		Stat_t: *st,
+		Xattr:  x,
+		Name:   p,
+	}
+	return xt, nil
+}
 
 func (x *Xstat) String() string {
 	return fmt.Sprintf("%s: size=%d, uid=%d, gid=%d, mode=%#x, mtime=%s",
@@ -127,7 +141,6 @@ func (x *Xstat) Equal(b *Xstat) bool {
 
 	return true
 }
-
 
 func equalTime(a, b syscall.Timespec) bool {
 	if a.Sec != b.Sec {
