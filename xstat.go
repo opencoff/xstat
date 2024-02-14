@@ -1,4 +1,4 @@
-// stat.go -- extended stat(2) support
+// xstat.go -- extended stat(2) support
 //
 // (c) 2023- Sudhi Herle <sudhi@herle.net>
 //
@@ -48,7 +48,7 @@ func NewFromPath(p string, xattr bool) (*Xstat, error) {
 	return &x, nil
 }
 
-func New(p string, fi os.FileInfo, x Xattr) (*Xstat, error) {
+func New(p string, fi os.FileInfo, x bool) (*Xstat, error) {
 	st, ok := fi.Sys().(*syscall.Stat_t)
 	if !ok {
 		return nil, fmt.Errorf("%s: can't get stat_t", p)
@@ -56,8 +56,14 @@ func New(p string, fi os.FileInfo, x Xattr) (*Xstat, error) {
 
 	xt := &Xstat{
 		Stat_t: *st,
-		Xattr:  x,
 		Name:   p,
+	}
+	if xattr {
+		xa, err := getxattr(p)
+		if err != nil {
+			return nil, err
+		}
+		xt.Xattr = xa
 	}
 	return xt, nil
 }
